@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/drew-wallace/sudoku-solver-go/sudoku-puzzle"
@@ -32,7 +31,7 @@ func main() {
 	duration := time.Since(then)
 
 	if check == 0 {
-		fmt.Println("Puzzle solved in " + strconv.FormatFloat(duration.Seconds(), 'E', -1, 64) + "seconds!\nSolved puzzle stored in solved.txt")
+		fmt.Printf("Puzzle solved in %v seconds!\nSolved puzzle stored in solved.txt\n", duration.Seconds())
 	}
 
 	puzzle.Output(false)

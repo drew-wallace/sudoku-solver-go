@@ -2,7 +2,6 @@ package sudokuPuzzle
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -11,7 +10,7 @@ import (
 
 // SudokuSolver ...
 type SudokuSolver struct {
-	grid [9][9][10]int
+	grid *[9][9][10]int
 }
 
 func check(e error) {
@@ -55,13 +54,11 @@ func SudokuPuzzle(inputGridString string) SudokuSolver {
 		}
 	}
 
-	return SudokuSolver{grid}
+	return SudokuSolver{&grid}
 }
 
 // Solve ...
 func (puzzle SudokuSolver) Solve() int {
-	fmt.Println("Solve", strconv.FormatBool(puzzle.isCorrect()), strconv.FormatBool(puzzle.isSolved()))
-
 	if puzzle.isCorrect() && !puzzle.isSolved() {
 		puzzle.setCellLoop()
 	}
@@ -72,13 +69,14 @@ func (puzzle SudokuSolver) Solve() int {
 		return 0
 	}
 	// x and y are the coord. and n is the number possible
-	x, y, n := puzzle.findLeastPoss()
-	fmt.Println("Solve", strconv.Itoa(x), strconv.Itoa(y), strconv.Itoa(n))
+	x := 0
+	y := 0
+	var n int
+	puzzle.findLeastPoss(&x, &y, &n)
+
 	for d := 1; d < 10; d++ {
 		if puzzle.grid[x][y][d] != 0 {
 			puzzle.grid[x][y][0] = puzzle.grid[x][y][d] //recursively goes through and checks each possibility. if the puzzle becomes solved it bails out. if not it check the next possibility
-			fmt.Println("Solve", strconv.Itoa(x), strconv.Itoa(y), strconv.Itoa(d))
-			fmt.Println("Solve", strconv.Itoa(puzzle.grid[x][y][0]))
 			rValue := puzzle.Solve()
 			if rValue == 0 {
 				return 0
@@ -242,11 +240,12 @@ func (puzzle SudokuSolver) cellCheck(v int, r int, c int) bool {
 }
 
 func (puzzle SudokuSolver) setPossible() {
+	var v int
 	for r := 0; r < 9; r++ {
 		for c := 0; c < 9; c++ {
 			//runs through the whole grid and sets the possible values for each cell
 			if puzzle.grid[r][c][0] != 0 {
-				v := puzzle.grid[r][c][0]
+				v = puzzle.grid[r][c][0]
 				puzzle.colSet(v, c)
 				puzzle.rowSet(v, r)
 				puzzle.zoneSet(v, r, c)
@@ -257,12 +256,12 @@ func (puzzle SudokuSolver) setPossible() {
 
 func (puzzle SudokuSolver) setCellLoop() {
 	count := 0 //counts possible
-	sd := 0    //singles possibility var.
+	var sd int //singles possibility var.
 	changed := true
-	tmp := [9]int{} //array of possible values for the cells in a zone/row/column
-	zr := 0
-	zc := 0 //zone row, zone column
-	for {
+	var tmp [9]int //array of possible values for the cells in a zone/row/column
+	var zr int
+	var zc int //zone row, zone column
+	for changed {
 		changed = false
 		for r := 0; r < 9; r++ {
 			for c := 0; c < 9; c++ {
@@ -278,7 +277,6 @@ func (puzzle SudokuSolver) setCellLoop() {
 					}
 					//if only one possibility found, use the stored coord. to change the cell value to the possibility
 					if count == 1 {
-						fmt.Println(strconv.Itoa(r), strconv.Itoa(c), strconv.Itoa(sd))
 						puzzle.grid[r][c][0] = sd
 						changed = true
 						goto eocl
@@ -344,8 +342,7 @@ func (puzzle SudokuSolver) setCellLoop() {
 					}
 					for d := 1; d < 10; d++ {
 						//if a possible value of the cell is unique to the zone, then set the cell to that value
-						if puzzle.grid[r][c][d] != tmp[puzzle.grid[r][c][d]-1] && puzzle.grid[r][c][d] != 0 {
-							fmt.Println(strconv.Itoa(r), strconv.Itoa(c), strconv.Itoa(sd))
+						if puzzle.grid[r][c][d] != 0 && puzzle.grid[r][c][d] != tmp[puzzle.grid[r][c][d]-1] {
 							puzzle.grid[r][c][0] = puzzle.grid[r][c][d]
 							changed = true
 							goto eocl
@@ -368,8 +365,7 @@ func (puzzle SudokuSolver) setCellLoop() {
 					}
 					for d := 1; d < 10; d++ {
 						//if a possible value of the cell is unique to the row, then set the cell to that value
-						if puzzle.grid[r][c][d] != tmp[puzzle.grid[r][c][d]-1] && puzzle.grid[r][c][d] != 0 {
-							fmt.Println(strconv.Itoa(r), strconv.Itoa(c), strconv.Itoa(sd))
+						if puzzle.grid[r][c][d] != 0 && puzzle.grid[r][c][d] != tmp[puzzle.grid[r][c][d]-1] {
 							puzzle.grid[r][c][0] = puzzle.grid[r][c][d]
 							changed = true
 							goto eocl
@@ -393,8 +389,7 @@ func (puzzle SudokuSolver) setCellLoop() {
 
 					for d := 1; d < 10; d++ {
 						//if a possible value of the cell is unique to the column, then set the cell to that value
-						if puzzle.grid[r][c][d] != tmp[puzzle.grid[r][c][d]-1] && puzzle.grid[r][c][d] != 0 {
-							fmt.Println(strconv.Itoa(r), strconv.Itoa(c), strconv.Itoa(sd))
+						if puzzle.grid[r][c][d] != 0 && puzzle.grid[r][c][d] != tmp[puzzle.grid[r][c][d]-1] {
 							puzzle.grid[r][c][0] = puzzle.grid[r][c][d]
 							changed = true
 							goto eocl
@@ -403,9 +398,6 @@ func (puzzle SudokuSolver) setCellLoop() {
 				eocl:
 				}
 			}
-		}
-		if !changed {
-			break
 		}
 	}
 notCorrect:
@@ -442,11 +434,9 @@ func (puzzle SudokuSolver) isCorrect() bool {
 	return true
 }
 
-func (puzzle SudokuSolver) findLeastPoss() (int, int, int) {
+func (puzzle SudokuSolver) findLeastPoss(x *int, y *int, n *int) {
 	count := 0
-	x := 0
-	y := 0
-	n := 9
+	*n = 9
 	for r := 0; r < 9; r++ {
 		for c := 0; c < 9; c++ {
 			if puzzle.grid[r][c][0] == 0 {
@@ -455,17 +445,14 @@ func (puzzle SudokuSolver) findLeastPoss() (int, int, int) {
 						count++ //counts the number possible
 					}
 				}
-				if count < n {
-					n = count //if the number possible is less than the global possible save it and the coord.
-					x = r
-					y = c
+				if count < *n {
+					*n = count //if the number possible is less than the global possible save it and the coord.
+					*x = r
+					*y = c
 				} else {
 					count = 0
 				}
 			}
 		}
 	}
-
-	fmt.Println("FLP", strconv.Itoa(x), strconv.Itoa(y), strconv.Itoa(n))
-	return x, y, n
 }
