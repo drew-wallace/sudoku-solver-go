@@ -43,7 +43,7 @@ func SudokuPuzzle(inputGridString string) SudokuSolver {
 
 	for r := 0; r < 9; r++ {
 		for c := 0; c < 9; c++ {
-			grid[r][c][0] = ints[r+c]
+			grid[r][c][0] = ints[(r*9)+c]
 			for d := 1; d < 10; d++ {
 				if grid[r][c][0] != 0 {
 					grid[r][c][d] = 0 //sets all possible for that cell to 0 if a value was given
